@@ -1,8 +1,22 @@
 <resources>
-    <string name="app_name">callback</string>
+    <string name="app_name">Recall Callback</string>
     <string name="dismiss">Dismiss</string>
     <string name="run_in_background">Run in Background</string>
     <string name="show_recall_button">Show Recall Button</string>
     <string name="recall">Recall</string>
-    <string name="todo">TODO</string>
+    <string name="recall_with_name">Recall %1$s</string>
+    <string name="show_in_dnd">Show in DND Mode</string>
+    <string name="battery_optimization">Battery Optimization</string>
+    <string name="optimization_disabled">Status: Optimization Disabled (App runs freely)</string>
+    <string name="optimization_active">Status: Optimization Active (System may kill app)</string>
+    <string name="dnd_description">If off, the recall button won\'t appear when DND is active.</string>
+    <string name="background_description">Allows the app to monitor calls and start automatically on reboot.</string>
+    <string name="permissions_required">Permissions required for app functionality</string>
+    <string name="persistence_enabled">Background service Enabled</string>
+    <string name="persistence_disabled">Background service Disabled</string>
+    <string name="battery_already_disabled">Battery optimization is already disabled</string>
+    <string name="could_not_open_battery">Could not open battery settings</string>
+    <string name="recall_service_active">Recall Service Active</string>
+    <string name="monitoring_calls">Monitoring calls to provide recall shortcut</string>
+    <string name="version_text">v1.0.0</string>
 </resources>

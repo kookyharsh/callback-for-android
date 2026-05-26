@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
@@ -20,18 +19,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.content.edit
+import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        // Only show toast if a requested permission was actually denied
         if (permissions.isNotEmpty()) {
             if (permissions.all { it.value }) {
                 checkOverlayPermission()
             } else {
-                Toast.makeText(this, "Permissions required for app functionality", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.permissions_required), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -41,7 +40,6 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         
-        // Handling window insets for better UI appearance
         val mainView = findViewById<android.view.View>(android.R.id.content)
         ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -56,12 +54,10 @@ class MainActivity : AppCompatActivity() {
         val tvBatteryStatus = findViewById<TextView>(R.id.tvBatteryStatus)
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         
-        // Load saved state first
         toggleFeature.isChecked = sharedPref.getBoolean("feature_enabled", true)
         toggleBackground.isChecked = sharedPref.getBoolean("background_enabled", true)
         toggleDnd.isChecked = sharedPref.getBoolean("show_in_dnd", false)
 
-        // Then apply colors based on the loaded state
         updateSwitchColors(toggleFeature)
         updateSwitchColors(toggleBackground)
         updateSwitchColors(toggleDnd)
@@ -83,9 +79,9 @@ class MainActivity : AppCompatActivity() {
             updateSwitchColors(switch as SwitchCompat)
             sharedPref.edit { putBoolean("background_enabled", isChecked) }
             if (isChecked) {
-                Toast.makeText(this, "Background service Enabled", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.persistence_enabled), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Background service Disabled", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.persistence_disabled), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -96,19 +92,6 @@ class MainActivity : AppCompatActivity() {
 
         if (toggleFeature.isChecked) {
             requestPermissions()
-        }
-    }
-
-    private fun simulateCallEnd() {
-        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val isEnabled = sharedPref.getBoolean("feature_enabled", true)
-
-        if (isEnabled) {
-            val serviceIntent = Intent(this, FloatingButtonService::class.java)
-            startService(serviceIntent)
-            Toast.makeText(this, "Simulating Call End...", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Enable 'Show Recall Button' first", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -130,7 +113,6 @@ class MainActivity : AppCompatActivity() {
         if (toRequest.isNotEmpty()) {
             requestPermissionLauncher.launch(toRequest)
         } else {
-            // All permissions already granted
             checkOverlayPermission()
         }
     }
@@ -139,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
+                "package:$packageName".toUri()
             )
             startActivity(intent)
         }
@@ -148,10 +130,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateBatteryStatus(textView: TextView) {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (pm.isIgnoringBatteryOptimizations(packageName)) {
-            textView.text = "Status: Optimization Disabled (App runs freely)"
+            textView.text = getString(R.string.optimization_disabled)
             textView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
         } else {
-            textView.text = "Status: Optimization Active (System may kill app)"
+            textView.text = getString(R.string.optimization_active)
             textView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
         }
     }
@@ -177,27 +159,24 @@ class MainActivity : AppCompatActivity() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
             try {
-                // Try direct request first
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:$packageName")
+                    data = "package:$packageName".toUri()
                 }
                 startActivity(intent)
             } catch (e: Exception) {
-                // Fallback to the general optimization settings if direct request fails
                 try {
                     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                     startActivity(intent)
                 } catch (ex: Exception) {
-                    Toast.makeText(this, "Could not open battery settings", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.could_not_open_battery), Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
-            // Even if the system says it's ignoring, allow the user to go to settings to verify
             try {
                 val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(this, "Battery optimization is already disabled", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.battery_already_disabled), Toast.LENGTH_SHORT).show()
             }
         }
     }

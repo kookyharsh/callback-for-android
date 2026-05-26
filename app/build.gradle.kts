@@ -21,6 +21,7 @@ android {
         
         // Remove unused language resources to save size
         resourceConfigurations += "en"
+
     }
 
     buildTypes {
@@ -34,12 +35,12 @@ android {
             ))
         }
         debug {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            setProguardFiles(listOf(
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
-            ))
+            )
         }
     }
     compileOptions {

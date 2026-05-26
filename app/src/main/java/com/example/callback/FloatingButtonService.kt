@@ -5,12 +5,10 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -24,6 +22,8 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -49,7 +49,7 @@ class FloatingButtonService : Service() {
             showFloatingButton(name ?: number ?: "Unknown")
         } else {
             val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
-            recallButton?.text = "Recall ${name ?: number ?: "Unknown"}"
+            recallButton?.text = getString(R.string.recall_with_name, name ?: number ?: "Unknown")
         }
         
         handler.removeCallbacks(autoDismissRunnable)
@@ -67,8 +67,8 @@ class FloatingButtonService : Service() {
         manager.createNotificationChannel(channel)
 
         val notification = Notification.Builder(this, channelId)
-            .setContentTitle("Recall Service Active")
-            .setContentText("Monitoring calls to provide recall shortcut")
+            .setContentTitle(getString(R.string.recall_service_active))
+            .setContentText(getString(R.string.monitoring_calls))
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
@@ -86,7 +86,7 @@ class FloatingButtonService : Service() {
                 arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME),
                 null,
                 null,
-                CallLog.Calls.DATE + " DESC"
+                "${CallLog.Calls.DATE} DESC"
             )
 
             cursor?.use {
@@ -102,9 +102,10 @@ class FloatingButtonService : Service() {
 
     private fun showFloatingButton(displayName: String) {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val inflater = LayoutInflater.from(this)
         
         // 1. Setup Dismiss Zone (Hidden initially)
-        dismissZoneView = LayoutInflater.from(this).inflate(R.layout.layout_dismiss_zone, null)
+        dismissZoneView = inflater.inflate(R.layout.layout_dismiss_zone, null)
         dismissParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -118,7 +119,7 @@ class FloatingButtonService : Service() {
         windowManager?.addView(dismissZoneView, dismissParams)
 
         // 2. Setup Floating Button
-        floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_button, null)
+        floatingView = inflater.inflate(R.layout.layout_floating_button, null)
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val savedX = sharedPref.getInt("btn_x", 0)
         val savedY = sharedPref.getInt("btn_y", 100)
@@ -136,7 +137,7 @@ class FloatingButtonService : Service() {
         }
 
         val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
-        recallButton?.text = "Recall $displayName"
+        recallButton?.text = getString(R.string.recall_with_name, displayName)
         
         recallButton?.setOnTouchListener(object : View.OnTouchListener {
             private var initialX: Int = 0
@@ -145,6 +146,7 @@ class FloatingButtonService : Service() {
             private var initialTouchY: Float = 0f
             private var isMoving = false
 
+            @android.annotation.SuppressLint("ClickableViewAccessibility")
             override fun onTouch(v: View, event: MotionEvent): Boolean {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
@@ -187,7 +189,10 @@ class FloatingButtonService : Service() {
                             dialLastNumber()
                             stopSelf()
                         } else {
-                            sharedPref.edit().putInt("btn_x", params.x).putInt("btn_y", params.y).apply()
+                            sharedPref.edit {
+                                putInt("btn_x", params.x)
+                                putInt("btn_y", params.y)
+                            }
                             handler.postDelayed(autoDismissRunnable, 10000)
                         }
                         return true
@@ -206,11 +211,10 @@ class FloatingButtonService : Service() {
         val screenHeight = resources.displayMetrics.heightPixels
         
         val centerX = screenWidth / 2f
-        val centerY = screenHeight - 84 * resources.displayMetrics.density // Estimate based on layout_dismiss_zone.xml
+        val centerY = screenHeight - 84 * resources.displayMetrics.density
 
         val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
         
-        // Scale icon if button is close
         if (distance < 300) {
             val scale = 1.0f + (300f - distance.toFloat()) / 300f * 0.5f
             dismissIcon.scaleX = scale
@@ -229,14 +233,14 @@ class FloatingButtonService : Service() {
         val centerY = screenHeight - 84 * resources.displayMetrics.density
         
         val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
-        return distance < 150 // Hitbox radius
+        return distance < 150
     }
 
     private fun dialLastNumber() {
         val number = lastNumber ?: return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             val intent = Intent(Intent.ACTION_CALL)
-            intent.data = Uri.parse("tel:$number")
+            intent.data = "tel:$number".toUri()
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
         }
