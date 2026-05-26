@@ -159,12 +159,29 @@ class MainActivity : AppCompatActivity() {
     private fun requestIgnoreBatteryOptimizations() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
+            try {
+                // Try direct request first
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                // Fallback to the general optimization settings if direct request fails
+                try {
+                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    startActivity(intent)
+                } catch (ex: Exception) {
+                    Toast.makeText(this, "Could not open battery settings", Toast.LENGTH_SHORT).show()
+                }
             }
-            startActivity(intent)
         } else {
-            Toast.makeText(this, "Battery optimization is already disabled", Toast.LENGTH_SHORT).show()
+            // Even if the system says it's ignoring, allow the user to go to settings to verify
+            try {
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Battery optimization is already disabled", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
