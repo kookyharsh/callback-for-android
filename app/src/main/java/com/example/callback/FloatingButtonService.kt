@@ -22,13 +22,18 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 class FloatingButtonService : Service() {
     private var windowManager: WindowManager? = null
     private var floatingView: View? = null
+    private var dismissZoneView: View? = null
     private lateinit var params: WindowManager.LayoutParams
+    private lateinit var dismissParams: WindowManager.LayoutParams
+    
     private val handler = Handler(Looper.getMainLooper())
     private val autoDismissRunnable = Runnable { stopSelf() }
     private var lastNumber: String? = null
@@ -43,12 +48,10 @@ class FloatingButtonService : Service() {
         if (floatingView == null) {
             showFloatingButton(name ?: number ?: "Unknown")
         } else {
-            // Update text if already showing
             val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
             recallButton?.text = "Recall ${name ?: number ?: "Unknown"}"
         }
         
-        // Reset 10-second timer
         handler.removeCallbacks(autoDismissRunnable)
         handler.postDelayed(autoDismissRunnable, 10000)
         
@@ -99,8 +102,23 @@ class FloatingButtonService : Service() {
 
     private fun showFloatingButton(displayName: String) {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_button, null)
+        
+        // 1. Setup Dismiss Zone (Hidden initially)
+        dismissZoneView = LayoutInflater.from(this).inflate(R.layout.layout_dismiss_zone, null)
+        dismissParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.BOTTOM
+            alpha = 0f // Hidden
+        }
+        windowManager?.addView(dismissZoneView, dismissParams)
 
+        // 2. Setup Floating Button
+        floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_button, null)
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val savedX = sharedPref.getInt("btn_x", 0)
         val savedY = sharedPref.getInt("btn_y", 100)
@@ -111,11 +129,11 @@ class FloatingButtonService : Service() {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
-        )
-
-        params.gravity = Gravity.TOP or Gravity.START
-        params.x = savedX
-        params.y = savedY
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = savedX
+            y = savedY
+        }
 
         val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
         recallButton?.text = "Recall $displayName"
@@ -127,7 +145,6 @@ class FloatingButtonService : Service() {
             private var initialTouchY: Float = 0f
             private var isMoving = false
 
-            @android.annotation.SuppressLint("ClickableViewAccessibility")
             override fun onTouch(v: View, event: MotionEvent): Boolean {
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
@@ -137,6 +154,10 @@ class FloatingButtonService : Service() {
                         initialTouchY = event.rawY
                         isMoving = false
                         handler.removeCallbacks(autoDismissRunnable)
+                        
+                        // Show Dismiss Zone
+                        dismissParams.alpha = 1f
+                        windowManager?.updateViewLayout(dismissZoneView, dismissParams)
                         return true
                     }
                     MotionEvent.ACTION_MOVE -> {
@@ -148,11 +169,20 @@ class FloatingButtonService : Service() {
                             params.x = initialX + dx.toInt()
                             params.y = initialY + dy.toInt()
                             windowManager?.updateViewLayout(floatingView, params)
+                            
+                            // Check for proximity to dismiss icon
+                            updateDismissZoneScaling(event.rawX, event.rawY)
                         }
                         return true
                     }
                     MotionEvent.ACTION_UP -> {
-                        if (!isMoving) {
+                        // Hide Dismiss Zone
+                        dismissParams.alpha = 0f
+                        windowManager?.updateViewLayout(dismissZoneView, dismissParams)
+
+                        if (isInsideDismissZone(event.rawX, event.rawY)) {
+                            stopSelf()
+                        } else if (!isMoving) {
                             v.performClick()
                             dialLastNumber()
                             stopSelf()
@@ -170,6 +200,38 @@ class FloatingButtonService : Service() {
         windowManager?.addView(floatingView, params)
     }
 
+    private fun updateDismissZoneScaling(rawX: Float, rawY: Float) {
+        val dismissIcon = dismissZoneView?.findViewById<ImageView>(R.id.iv_dismiss_icon) ?: return
+        val screenWidth = resources.displayMetrics.widthPixels
+        val screenHeight = resources.displayMetrics.heightPixels
+        
+        val centerX = screenWidth / 2f
+        val centerY = screenHeight - 84 * resources.displayMetrics.density // Estimate based on layout_dismiss_zone.xml
+
+        val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
+        
+        // Scale icon if button is close
+        if (distance < 300) {
+            val scale = 1.0f + (300f - distance.toFloat()) / 300f * 0.5f
+            dismissIcon.scaleX = scale
+            dismissIcon.scaleY = scale
+        } else {
+            dismissIcon.scaleX = 1.0f
+            dismissIcon.scaleY = 1.0f
+        }
+    }
+
+    private fun isInsideDismissZone(rawX: Float, rawY: Float): Boolean {
+        val screenWidth = resources.displayMetrics.widthPixels
+        val screenHeight = resources.displayMetrics.heightPixels
+        
+        val centerX = screenWidth / 2f
+        val centerY = screenHeight - 84 * resources.displayMetrics.density
+        
+        val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
+        return distance < 150 // Hitbox radius
+    }
+
     private fun dialLastNumber() {
         val number = lastNumber ?: return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
@@ -185,6 +247,9 @@ class FloatingButtonService : Service() {
         handler.removeCallbacks(autoDismissRunnable)
         if (floatingView != null) {
             windowManager?.removeView(floatingView)
+        }
+        if (dismissZoneView != null) {
+            windowManager?.removeView(dismissZoneView)
         }
     }
 }

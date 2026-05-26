@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">callback</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="run_in_background">Run in Background</string>
+    <string name="show_recall_button">Show Recall Button</string>
+    <string name="recall">Recall</string>
+    <string name="todo">TODO</string>
 </resources>

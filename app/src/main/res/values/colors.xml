@@ -12,7 +12,7 @@
 
     <!-- Shared Toggle/Status Colors -->
     <color name="toggle_on">#5985E1</color>
-    <color name="toggle_off">#FF0C0C</color>
+    <color name="toggle_off">#26282B</color>
     <color name="toggle_on_track">#D1DDF7</color>
-    <color name="toggle_off_track">#FAD9D9</color>
+    <color name="toggle_off_track">#A0BDBDBD</color>
 </resources>

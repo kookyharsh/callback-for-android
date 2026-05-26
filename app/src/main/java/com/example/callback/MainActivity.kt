@@ -26,10 +26,13 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions.all { it.value }) {
-            checkOverlayPermission()
-        } else {
-            Toast.makeText(this, "Permissions required for app functionality", Toast.LENGTH_SHORT).show()
+        // Only show toast if a requested permission was actually denied
+        if (permissions.isNotEmpty()) {
+            if (permissions.all { it.value }) {
+                checkOverlayPermission()
+            } else {
+                Toast.makeText(this, "Permissions required for app functionality", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -96,6 +99,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun simulateCallEnd() {
+        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val isEnabled = sharedPref.getBoolean("feature_enabled", true)
+
+        if (isEnabled) {
+            val serviceIntent = Intent(this, FloatingButtonService::class.java)
+            startService(serviceIntent)
+            Toast.makeText(this, "Simulating Call End...", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Enable 'Show Recall Button' first", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun requestPermissions() {
         val permissions = mutableListOf(
             Manifest.permission.READ_PHONE_STATE,
@@ -114,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         if (toRequest.isNotEmpty()) {
             requestPermissionLauncher.launch(toRequest)
         } else {
+            // All permissions already granted
             checkOverlayPermission()
         }
     }
