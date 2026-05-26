@@ -1,10 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.Callback" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/logo_blue</item>
-        <item name="colorSecondary">@color/logo_blue_dark</item>
-        <item name="android:windowBackground">@color/logo_blue_light</item>
-        <item name="android:statusBarColor">@color/logo_blue</item>
+        <item name="colorPrimary">@color/toggle_on</item>
+        <item name="android:windowBackground">@color/app_bg_light</item>
+        <item name="colorSurface">@color/card_bg_light</item>
+        <item name="colorOnSurface">@color/text_main_light</item>
+        <item name="android:statusBarColor">@color/app_bg_light</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.Callback" parent="Base.Theme.Callback" />

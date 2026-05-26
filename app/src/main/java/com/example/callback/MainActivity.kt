@@ -141,15 +141,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateSwitchColors(switch: SwitchCompat) {
         val thumbColor = if (switch.isChecked) {
-            ContextCompat.getColor(this, R.color.logo_blue)
+            ContextCompat.getColor(this, R.color.toggle_on)
         } else {
-            ContextCompat.getColor(this, R.color.status_red)
+            ContextCompat.getColor(this, R.color.toggle_off)
         }
 
         val trackColor = if (switch.isChecked) {
-            ContextCompat.getColor(this, R.color.logo_blue_light)
+            ContextCompat.getColor(this, R.color.toggle_on_track)
         } else {
-            ContextCompat.getColor(this, R.color.status_red_light)
+            ContextCompat.getColor(this, R.color.toggle_off_track)
         }
 
         switch.thumbTintList = ColorStateList.valueOf(thumbColor)

@@ -18,15 +18,28 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Remove unused language resources to save size
+        resourceConfigurations += "en"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // Full R8 optimization
+            setProguardFiles(listOf(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
-            )
+            ))
+        }
+        debug {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            setProguardFiles(listOf(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            ))
         }
     }
     compileOptions {
