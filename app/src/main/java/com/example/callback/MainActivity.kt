@@ -47,22 +47,26 @@ class MainActivity : AppCompatActivity() {
         }
 
         val toggleFeature = findViewById<SwitchCompat>(R.id.toggleFeature)
-        val toggleBackground = findViewById<SwitchCompat>(R.id.toggleBackground)
+        val toggleBackground = findViewById<SwitchCompat>(R.id.toggleBackground2)
+        val toggleDnd = findViewById<SwitchCompat>(R.id.toggleDnd)
         val btnBattery = findViewById<Button>(R.id.btnBatteryOptimization)
         val tvBatteryStatus = findViewById<TextView>(R.id.tvBatteryStatus)
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         
-        updateBatteryStatus(tvBatteryStatus)
+        // Load saved state first
+        toggleFeature.isChecked = sharedPref.getBoolean("feature_enabled", true)
+        toggleBackground.isChecked = sharedPref.getBoolean("background_enabled", true)
+        toggleDnd.isChecked = sharedPref.getBoolean("show_in_dnd", false)
+
+        // Then apply colors based on the loaded state
         updateSwitchColors(toggleFeature)
         updateSwitchColors(toggleBackground)
+        updateSwitchColors(toggleDnd)
+        updateBatteryStatus(tvBatteryStatus)
 
         btnBattery.setOnClickListener {
             requestIgnoreBatteryOptimizations()
         }
-        
-        // Load saved state
-        toggleFeature.isChecked = sharedPref.getBoolean("feature_enabled", true)
-        toggleBackground.isChecked = sharedPref.getBoolean("background_enabled", true)
 
         toggleFeature.setOnCheckedChangeListener { switch, isChecked ->
             updateSwitchColors(switch as SwitchCompat)
@@ -80,6 +84,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "Background service Disabled", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        toggleDnd.setOnCheckedChangeListener { switch, isChecked ->
+            updateSwitchColors(switch as SwitchCompat)
+            sharedPref.edit { putBoolean("show_in_dnd", isChecked) }
         }
 
         if (toggleFeature.isChecked) {

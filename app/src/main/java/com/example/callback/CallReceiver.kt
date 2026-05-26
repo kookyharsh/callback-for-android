@@ -1,5 +1,6 @@
 package com.example.callback
 
+import android.app.NotificationManager
 import android.app.job.JobInfo
 import android.app.job.JobScheduler
 import android.content.BroadcastReceiver
@@ -35,8 +36,13 @@ class CallReceiver : BroadcastReceiver() {
             if (lastState != TelephonyManager.CALL_STATE_IDLE && state == TelephonyManager.CALL_STATE_IDLE) {
                 // Call ended
                 val isEnabled = sharedPref.getBoolean("feature_enabled", true)
+                val showInDnd = sharedPref.getBoolean("show_in_dnd", false)
                 
                 if (isEnabled && backgroundEnabled) {
+                    if (!showInDnd && isDndActive(context)) {
+                        return // Respect DND
+                    }
+
                     if (isNetworkAvailable(context)) {
                         val serviceIntent = Intent(context, FloatingButtonService::class.java)
                         context.startService(serviceIntent)
@@ -47,6 +53,11 @@ class CallReceiver : BroadcastReceiver() {
             }
             lastState = state
         }
+    }
+
+    private fun isDndActive(context: Context): Boolean {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        return notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
     }
 
     private fun isNetworkAvailable(context: Context): Boolean {

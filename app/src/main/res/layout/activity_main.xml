@@ -86,6 +86,31 @@
                 android:layout_marginVertical="8dp"
                 android:background="#E0E0E0" />
 
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/toggleDnd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="Show Recall Button even in Do Not Disturb"
+                android:textSize="18sp"
+                app:thumbTint="@color/logo_blue"
+                app:trackTint="@color/logo_blue_light" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:text="If off, the recall button won't appear when DND is active."
+                android:textColor="#757575"
+                android:textSize="12sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="#E0E0E0" />
+
             <Button
                 android:id="@+id/btnBatteryOptimization"
                 style="@style/Widget.Material3.Button.TextButton"
