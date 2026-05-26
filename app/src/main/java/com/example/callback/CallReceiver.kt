@@ -16,6 +16,9 @@ class CallReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        val sharedPref = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val backgroundEnabled = sharedPref.getBoolean("background_enabled", true)
+        
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             return
         }
@@ -31,10 +34,9 @@ class CallReceiver : BroadcastReceiver() {
 
             if (lastState != TelephonyManager.CALL_STATE_IDLE && state == TelephonyManager.CALL_STATE_IDLE) {
                 // Call ended
-                val sharedPref = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
                 val isEnabled = sharedPref.getBoolean("feature_enabled", true)
                 
-                if (isEnabled) {
+                if (isEnabled && backgroundEnabled) {
                     if (isNetworkAvailable(context)) {
                         val serviceIntent = Intent(context, FloatingButtonService::class.java)
                         context.startService(serviceIntent)

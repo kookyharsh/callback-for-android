@@ -1,8 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Callback" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/logo_blue</item>
+        <item name="colorSecondary">@color/logo_blue_dark</item>
+        <item name="android:windowBackground">@color/logo_blue_light</item>
+        <item name="android:statusBarColor">@color/logo_blue</item>
     </style>
 
     <style name="Theme.Callback" parent="Base.Theme.Callback" />

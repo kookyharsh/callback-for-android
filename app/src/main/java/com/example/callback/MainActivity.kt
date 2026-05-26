@@ -1,7 +1,6 @@
 package com.example.callback
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -33,22 +32,37 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        
+        // Handling window insets for better UI appearance
+        val mainView = findViewById<android.view.View>(android.R.id.content)
+        ViewCompat.setOnApplyWindowInsetsListener(mainView) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
         val toggleFeature = findViewById<SwitchCompat>(R.id.toggleFeature)
+        val toggleBackground = findViewById<SwitchCompat>(R.id.toggleBackground)
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         
         // Load saved state
         toggleFeature.isChecked = sharedPref.getBoolean("feature_enabled", true)
+        toggleBackground.isChecked = sharedPref.getBoolean("background_enabled", true)
 
         toggleFeature.setOnCheckedChangeListener { _, isChecked ->
             sharedPref.edit { putBoolean("feature_enabled", isChecked) }
             if (isChecked) {
                 requestPermissions()
+            }
+        }
+
+        toggleBackground.setOnCheckedChangeListener { _, isChecked ->
+            sharedPref.edit { putBoolean("background_enabled", isChecked) }
+            if (isChecked) {
+                // Ensure notification and boot permissions are available (handled by manifest/OS)
+                Toast.makeText(this, "Persistence Enabled", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Persistence Disabled", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -58,11 +72,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPermissions() {
-        val permissions = arrayOf(
+        val permissions = mutableListOf(
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.CALL_PHONE,
             Manifest.permission.READ_CALL_LOG
         )
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
 
         val toRequest = permissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
