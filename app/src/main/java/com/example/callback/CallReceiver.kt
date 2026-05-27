@@ -1,19 +1,14 @@
 package com.example.callback
 
-import android.app.NotificationManager
-import android.app.job.JobInfo
-import android.app.job.JobScheduler
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.telephony.TelephonyManager
 
 class CallReceiver : BroadcastReceiver() {
     companion object {
         private var lastState = TelephonyManager.CALL_STATE_IDLE
+        private var lastNumber: String? = null
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -26,6 +21,12 @@ class CallReceiver : BroadcastReceiver() {
 
         if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
             val stateStr = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
+            val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+            
+            if (!number.isNullOrEmpty()) {
+                lastNumber = number
+            }
+
             val state = when (stateStr) {
                 TelephonyManager.EXTRA_STATE_IDLE -> TelephonyManager.CALL_STATE_IDLE
                 TelephonyManager.EXTRA_STATE_OFFHOOK -> TelephonyManager.CALL_STATE_OFFHOOK
@@ -33,21 +34,21 @@ class CallReceiver : BroadcastReceiver() {
                 else -> TelephonyManager.CALL_STATE_IDLE
             }
 
-            if (lastState != TelephonyManager.CALL_STATE_IDLE && state == TelephonyManager.CALL_STATE_IDLE) {
-                // Call ended
+            // Trigger when transitioning to IDLE from anything else, or if we just got an IDLE broadcast and were not IDLE
+            if (state == TelephonyManager.CALL_STATE_IDLE && lastState != TelephonyManager.CALL_STATE_IDLE) {
                 val isEnabled = sharedPref.getBoolean("feature_enabled", true)
-                val showInDnd = sharedPref.getBoolean("show_in_dnd", false)
-                
                 if (isEnabled && backgroundEnabled) {
-                    if (!showInDnd && isDndActive(context)) {
-                        return // Respect DND
-                    }
+                    val showInDnd = sharedPref.getBoolean("show_in_dnd", false)
+                    if (!showInDnd && isDndActive(context)) return
 
-                    if (isNetworkAvailable(context)) {
-                        val serviceIntent = Intent(context, FloatingButtonService::class.java)
-                        context.startService(serviceIntent)
+                    val serviceIntent = Intent(context, FloatingButtonService::class.java).apply {
+                        putExtra("number", lastNumber)
+                    }
+                    
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent)
                     } else {
-                        scheduleNetworkJob(context)
+                        context.startService(serviceIntent)
                     }
                 }
             }
@@ -56,24 +57,7 @@ class CallReceiver : BroadcastReceiver() {
     }
 
     private fun isDndActive(context: Context): Boolean {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        return notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
-    }
-
-    private fun isNetworkAvailable(context: Context): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val capabilities = cm.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
-    private fun scheduleNetworkJob(context: Context) {
-        val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-        val componentName = ComponentName(context, NetworkJobService::class.java)
-        val jobInfo = JobInfo.Builder(123, componentName)
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .setPersisted(true)
-            .build()
-        jobScheduler.schedule(jobInfo)
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+        return notificationManager?.currentInterruptionFilter != android.app.NotificationManager.INTERRUPTION_FILTER_ALL
     }
 }

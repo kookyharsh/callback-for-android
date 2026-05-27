@@ -1,7 +1,6 @@
 package com.example.callback
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -24,13 +23,21 @@ import androidx.core.net.toUri
 class MainActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
+        ActivityResultContracts.RequestMultiplePermissions(),
     ) { permissions ->
-        if (permissions.isNotEmpty()) {
-            if (permissions.all { it.value }) {
+        val deniedPermissions = permissions.filter { !it.value }.keys
+        if (deniedPermissions.isEmpty()) {
+            checkOverlayPermission()
+        } else {
+            val permissionNames = deniedPermissions.asSequence().map { permission ->
+                permission.substringAfterLast(".").replace("_", " ")
+            }.joinToString(", ")
+            
+            Toast.makeText(this, "Missing: $permissionNames", Toast.LENGTH_LONG).show()
+            
+            // Still check overlay if at least one core permission was granted
+            if (permissions.any { it.value }) {
                 checkOverlayPermission()
-            } else {
-                Toast.makeText(this, getString(R.string.permissions_required), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -99,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         val permissions = mutableListOf(
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.CALL_PHONE,
-            Manifest.permission.READ_CALL_LOG
+            Manifest.permission.READ_CALL_LOG,
         )
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -123,12 +130,18 @@ class MainActivity : AppCompatActivity() {
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 "package:$packageName".toUri()
             )
-            startActivity(intent)
+            try {
+                startActivity(intent)
+                Toast.makeText(this, "Please enable 'Appear on top' for Callback", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {
+                val genericIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                startActivity(genericIntent)
+            }
         }
     }
 
     private fun updateBatteryStatus(textView: TextView) {
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
         if (pm.isIgnoringBatteryOptimizations(packageName)) {
             textView.text = getString(R.string.optimization_disabled)
             textView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
@@ -156,9 +169,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestIgnoreBatteryOptimizations() {
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
             try {
+                @android.annotation.SuppressLint("BatteryLife")
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = "package:$packageName".toUri()
                 }
@@ -167,7 +181,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                     startActivity(intent)
-                } catch (ex: Exception) {
+                } catch (_: Exception) {
                     Toast.makeText(this, getString(R.string.could_not_open_battery), Toast.LENGTH_SHORT).show()
                 }
             }

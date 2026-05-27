@@ -18,5 +18,6 @@
     <string name="could_not_open_battery">Could not open battery settings</string>
     <string name="recall_service_active">Recall Service Active</string>
     <string name="monitoring_calls">Monitoring calls to provide recall shortcut</string>
+    <string name="fgs_justification">This service displays a floating recall button immediately after a call ends to allow the user to quickly redial the last contact.</string>
     <string name="version_text">v1.0.0</string>
 </resources>

@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:ignore="ForegroundServiceType" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" tools:ignore="BatteryOptimization" />
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
@@ -36,16 +38,17 @@
             android:name="com.example.callback.FloatingButtonService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServiceType">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_TYPE"
-                android:value="This service displays a floating recall button immediately after a call ends to allow the user to quickly redial the last contact." />
+                android:value="@string/fgs_justification" />
         </service>
 
         <service
             android:name="com.example.callback.NetworkJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="true" />
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
