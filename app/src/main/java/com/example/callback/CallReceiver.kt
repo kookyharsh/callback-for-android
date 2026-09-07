@@ -37,7 +37,8 @@ class CallReceiver : BroadcastReceiver() {
             // Trigger when transitioning to IDLE from anything else, or if we just got an IDLE broadcast and were not IDLE
             if (state == TelephonyManager.CALL_STATE_IDLE && lastState != TelephonyManager.CALL_STATE_IDLE) {
                 val isEnabled = sharedPref.getBoolean("feature_enabled", true)
-                if (isEnabled && backgroundEnabled) {
+                val isCellularEnabled = sharedPref.getBoolean("app_cellular_enabled", true)
+                if (isEnabled && backgroundEnabled && isCellularEnabled) {
                     val showInDnd = sharedPref.getBoolean("show_in_dnd", false)
                     if (!showInDnd && isDndActive(context)) return
 

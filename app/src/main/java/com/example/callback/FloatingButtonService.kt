@@ -40,31 +40,43 @@ class FloatingButtonService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var countdownAnimator: ValueAnimator? = null
     private var lastNumber: String? = null
+    private var currentAppPackage: String? = null
+    private var currentContactName: String? = null
+    private var currentCallType: String? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundService()
         
+        val intentAppPackage = intent?.getStringExtra("app_package")
+        val intentContactName = intent?.getStringExtra("contact_name")
+        val intentCallType = intent?.getStringExtra("call_type")
         val intentNumber = intent?.getStringExtra("number")
         
+        currentAppPackage = intentAppPackage
+        currentContactName = intentContactName
+        currentCallType = intentCallType
+
         handler.postDelayed(
             {
                 val (name, number) = if (!intentNumber.isNullOrEmpty()) {
-                    // Try to find name for this number
                     Pair(getNameFromNumber(intentNumber), intentNumber)
+                } else if (!intentContactName.isNullOrEmpty()) {
+                    Pair(intentContactName, intentNumber)
                 } else {
                     getLastCallerInfo()
                 }
                 
                 lastNumber = number
+                val displayName = name ?: number ?: currentContactName ?: "Unknown"
 
                 if (floatingView == null) {
-                    showFloatingButton(name ?: number ?: "Unknown")
+                    showFloatingButton(displayName)
                 } else {
                     try {
                         val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
-                        recallButton?.text = getString(R.string.recall_with_name, name ?: number ?: "Unknown")
+                        recallButton?.text = getButtonText(currentAppPackage, displayName, currentCallType)
                     } catch (e: Exception) { e.printStackTrace() }
                 }
                 
@@ -76,9 +88,29 @@ class FloatingButtonService : Service() {
                 }
             },
             150,
-        ) // Reduced delay for faster appearance
+        )
 
         return START_NOT_STICKY
+    }
+
+    private fun getButtonText(appPackage: String?, nameOrNumber: String, callType: String?): String {
+        return when (appPackage) {
+            "com.whatsapp" -> {
+                if (callType == "video") {
+                    getString(R.string.whatsapp_video_recall, nameOrNumber)
+                } else {
+                    getString(R.string.whatsapp_voice_recall, nameOrNumber)
+                }
+            }
+            "com.whatsapp.w4b" -> {
+                if (callType == "video") {
+                    getString(R.string.w4b_video_recall, nameOrNumber)
+                } else {
+                    getString(R.string.w4b_voice_recall, nameOrNumber)
+                }
+            }
+            else -> getString(R.string.recall_with_name, nameOrNumber)
+        }
     }
 
     private fun getNameFromNumber(number: String): String? {
@@ -104,7 +136,7 @@ class FloatingButtonService : Service() {
     }
 
     private fun startCountdown() {
-        countdownAnimator?.removeAllListeners() // Remove old listeners before canceling
+        countdownAnimator?.removeAllListeners()
         countdownAnimator?.cancel()
 
         countdownAnimator = ValueAnimator.ofInt(10000, 0).apply {
@@ -125,7 +157,6 @@ class FloatingButtonService : Service() {
         }
     }
     
-    // Helper to resume countdown after moving
     private fun resumeCountdown() {
         if (countdownAnimator?.isPaused == true) {
             countdownAnimator?.resume()
@@ -209,7 +240,7 @@ class FloatingButtonService : Service() {
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.BOTTOM
-                alpha = 0f // Hidden
+                alpha = 0f
             }
             windowManager?.addView(dismissZoneView, dismissParams)
 
@@ -235,7 +266,7 @@ class FloatingButtonService : Service() {
             }
 
             val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
-            recallButton?.text = getString(R.string.recall_with_name, displayName)
+            recallButton?.text = getButtonText(currentAppPackage, displayName, currentCallType)
             
             recallButton?.setOnTouchListener(object : View.OnTouchListener {
                 private var initialX: Int = 0
@@ -255,7 +286,6 @@ class FloatingButtonService : Service() {
                             isMoving = false
                             countdownAnimator?.pause()
                             
-                            // Show Dismiss Zone
                             dismissParams.alpha = 1f
                             try {
                                 if (dismissZoneView?.isAttachedToWindow == true) {
@@ -278,13 +308,11 @@ class FloatingButtonService : Service() {
                                     }
                                 } catch (e: Exception) { e.printStackTrace() }
                                 
-                                // Check for proximity to dismiss icon
                                 updateDismissZoneScaling(event.rawX, event.rawY)
                             }
                             return true
                         }
                         MotionEvent.ACTION_UP -> {
-                            // Hide Dismiss Zone
                             dismissParams.alpha = 0f
                             try {
                                 if (dismissZoneView?.isAttachedToWindow == true) {
@@ -296,7 +324,7 @@ class FloatingButtonService : Service() {
                                 stopSelf()
                             } else if (!isMoving) {
                                 v.performClick()
-                                dialLastNumber()
+                                performRecallAction()
                                 stopSelf()
                             } else {
                                 sharedPref.edit {
@@ -326,7 +354,6 @@ class FloatingButtonService : Service() {
         val screenHeight = resources.displayMetrics.heightPixels
         
         val centerX = screenWidth / 2f
-        // Match the 80dp margin + 36dp (half of 72dp icon) = 116dp
         val centerY = screenHeight - 116 * density
 
         val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
@@ -348,12 +375,47 @@ class FloatingButtonService : Service() {
         val screenHeight = resources.displayMetrics.heightPixels
         
         val centerX = screenWidth / 2f
-        // Match the 80dp margin + 36dp (half of 72dp icon) = 116dp
         val centerY = screenHeight - 116 * density
         
         val distance = sqrt(((rawX - centerX) * (rawX - centerX) + (rawY - centerY) * (rawY - centerY)).toDouble())
-        // Increased radius for easier dismissal
         return distance < 100 * density
+    }
+
+    private fun performRecallAction() {
+        val appPkg = currentAppPackage
+        if (appPkg == "com.whatsapp" || appPkg == "com.whatsapp.w4b") {
+            launchWhatsAppCall(appPkg, currentContactName, lastNumber)
+        } else {
+            dialLastNumber()
+        }
+    }
+
+    private fun launchWhatsAppCall(packageName: String, contactName: String?, number: String?) {
+        try {
+            val digits = extractPhoneDigits(number ?: contactName ?: "")
+            if (digits.length >= 7) {
+                val intent = Intent(Intent.ACTION_VIEW, "https://api.whatsapp.com/send?phone=$digits".toUri()).apply {
+                    setPackage(packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                if (intent.resolveActivity(packageManager) != null) {
+                    startActivity(intent)
+                    return
+                }
+            }
+
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(launchIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun extractPhoneDigits(text: String): String {
+        return text.filter { it.isDigit() }
     }
 
     private fun dialLastNumber() {
