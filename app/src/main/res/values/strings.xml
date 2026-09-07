@@ -20,4 +20,17 @@
     <string name="monitoring_calls">Monitoring calls to provide recall shortcut</string>
     <string name="fgs_justification">This service displays a floating recall button immediately after a call ends to allow the user to quickly redial the last contact.</string>
     <string name="version_text">v1.0.0</string>
+
+    <string name="supported_apps_title">Supported App Services</string>
+    <string name="toggle_cellular">Cellular Phone Calls</string>
+    <string name="toggle_whatsapp">WhatsApp Calls</string>
+    <string name="toggle_whatsapp_business">WhatsApp Business Calls</string>
+    <string name="notification_listener_permission">Notification Access</string>
+    <string name="notification_listener_active">Status: Notification Access Granted</string>
+    <string name="notification_listener_inactive">Status: Notification Access Disabled (Required for WhatsApp)</string>
+    <string name="btn_grant_notification_access">Notification Settings</string>
+    <string name="whatsapp_voice_recall">WhatsApp Call %1$s</string>
+    <string name="whatsapp_video_recall">WhatsApp Video %1$s</string>
+    <string name="w4b_voice_recall">WA Business Call %1$s</string>
+    <string name="w4b_video_recall">WA Business Video %1$s</string>
 </resources>

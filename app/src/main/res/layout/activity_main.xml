@@ -9,9 +9,9 @@
 
     <ImageView
         android:id="@+id/iv_logo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="16dp"
         android:src="@drawable/logo"
         android:contentDescription="@string/app_name"
         app:layout_constraintEnd_toEndOf="parent"
@@ -22,105 +22,191 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="@string/recall"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="28sp"
+        android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/iv_logo" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_settings"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        app:cardBackgroundColor="?attr/colorSurface"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="#1A000000"
-        app:layout_constraintTop_toBottomOf="@id/tv_title">
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        app:layout_constraintBottom_toTopOf="@id/tv_version">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/toggleFeature"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_settings"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="@string/show_recall_button"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="17sp" />
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#1A000000">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#1A000000" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/toggleBackground2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="@string/run_in_background"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="17sp" />
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleFeature"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/show_recall_button"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="17sp" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#1A000000" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1A000000" />
 
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/toggleDnd"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="@string/show_in_dnd"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="17sp" />
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleBackground2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/run_in_background"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="17sp" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#1A000000" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1A000000" />
 
-            <Button
-                android:id="@+id/btnBatteryOptimization"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/battery_optimization"
-                android:textAlignment="viewStart"
-                android:textColor="?attr/colorPrimary"
-                app:icon="@android:drawable/ic_lock_power_off"
-                app:iconTint="?attr/colorPrimary" />
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleDnd"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/show_in_dnd"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="17sp" />
 
-            <TextView
-                android:id="@+id/tvBatteryStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="44dp"
-                android:paddingEnd="0dp"
-                android:text="@string/optimization_active"
-                android:textColor="?attr/colorOnSurface"
-                android:alpha="0.6"
-                android:textSize="13sp" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1A000000" />
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="4dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:text="@string/supported_apps_title"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleCellular"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/toggle_cellular"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleWhatsApp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/toggle_whatsapp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/toggleW4B"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp"
+                        android:text="@string/toggle_whatsapp_business"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1A000000" />
+
+                    <Button
+                        android:id="@+id/btnNotificationAccess"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/btn_grant_notification_access"
+                        android:textAlignment="viewStart"
+                        android:textColor="?attr/colorPrimary"
+                        app:icon="@android:drawable/ic_popup_reminder"
+                        app:iconTint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvNotificationStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="0dp"
+                        android:text="@string/notification_listener_inactive"
+                        android:textColor="?attr/colorOnSurface"
+                        android:alpha="0.6"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="8dp"
+                        android:background="#1A000000" />
+
+                    <Button
+                        android:id="@+id/btnBatteryOptimization"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/battery_optimization"
+                        android:textAlignment="viewStart"
+                        android:textColor="?attr/colorPrimary"
+                        app:icon="@android:drawable/ic_lock_power_off"
+                        app:iconTint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvBatteryStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="44dp"
+                        android:paddingEnd="0dp"
+                        android:text="@string/optimization_active"
+                        android:textColor="?attr/colorOnSurface"
+                        android:alpha="0.6"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </ScrollView>
 
     <TextView
+        android:id="@+id/tv_version"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:text="@string/version_text"
         android:textColor="?attr/colorOnSurface"
         android:alpha="0.4"

@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
             
             Toast.makeText(this, "Missing: $permissionNames", Toast.LENGTH_LONG).show()
             
-            // Still check overlay if at least one core permission was granted
             if (permissions.any { it.value }) {
                 checkOverlayPermission()
             }
@@ -57,21 +56,40 @@ class MainActivity : AppCompatActivity() {
         val toggleFeature = findViewById<SwitchCompat>(R.id.toggleFeature)
         val toggleBackground = findViewById<SwitchCompat>(R.id.toggleBackground2)
         val toggleDnd = findViewById<SwitchCompat>(R.id.toggleDnd)
+        val toggleCellular = findViewById<SwitchCompat>(R.id.toggleCellular)
+        val toggleWhatsApp = findViewById<SwitchCompat>(R.id.toggleWhatsApp)
+        val toggleW4B = findViewById<SwitchCompat>(R.id.toggleW4B)
+
         val btnBattery = findViewById<Button>(R.id.btnBatteryOptimization)
         val tvBatteryStatus = findViewById<TextView>(R.id.tvBatteryStatus)
+        val btnNotificationAccess = findViewById<Button>(R.id.btnNotificationAccess)
+        val tvNotificationStatus = findViewById<TextView>(R.id.tvNotificationStatus)
+
         val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
         
         toggleFeature.isChecked = sharedPref.getBoolean("feature_enabled", true)
         toggleBackground.isChecked = sharedPref.getBoolean("background_enabled", true)
         toggleDnd.isChecked = sharedPref.getBoolean("show_in_dnd", false)
+        toggleCellular.isChecked = sharedPref.getBoolean("app_cellular_enabled", true)
+        toggleWhatsApp.isChecked = sharedPref.getBoolean("app_whatsapp_enabled", true)
+        toggleW4B.isChecked = sharedPref.getBoolean("app_w4b_enabled", true)
 
         updateSwitchColors(toggleFeature)
         updateSwitchColors(toggleBackground)
         updateSwitchColors(toggleDnd)
+        updateSwitchColors(toggleCellular)
+        updateSwitchColors(toggleWhatsApp)
+        updateSwitchColors(toggleW4B)
+
         updateBatteryStatus(tvBatteryStatus)
+        updateNotificationListenerStatus(tvNotificationStatus)
 
         btnBattery.setOnClickListener {
             requestIgnoreBatteryOptimizations()
+        }
+
+        btnNotificationAccess.setOnClickListener {
+            openNotificationListenerSettings()
         }
 
         toggleFeature.setOnCheckedChangeListener { switch, isChecked ->
@@ -97,8 +115,54 @@ class MainActivity : AppCompatActivity() {
             sharedPref.edit { putBoolean("show_in_dnd", isChecked) }
         }
 
+        toggleCellular.setOnCheckedChangeListener { switch, isChecked ->
+            updateSwitchColors(switch as SwitchCompat)
+            sharedPref.edit { putBoolean("app_cellular_enabled", isChecked) }
+        }
+
+        toggleWhatsApp.setOnCheckedChangeListener { switch, isChecked ->
+            updateSwitchColors(switch as SwitchCompat)
+            sharedPref.edit { putBoolean("app_whatsapp_enabled", isChecked) }
+            if (isChecked && !isNotificationListenerEnabled()) {
+                openNotificationListenerSettings()
+            }
+        }
+
+        toggleW4B.setOnCheckedChangeListener { switch, isChecked ->
+            updateSwitchColors(switch as SwitchCompat)
+            sharedPref.edit { putBoolean("app_w4b_enabled", isChecked) }
+            if (isChecked && !isNotificationListenerEnabled()) {
+                openNotificationListenerSettings()
+            }
+        }
+
         if (toggleFeature.isChecked) {
             requestPermissions()
+        }
+    }
+
+    private fun isNotificationListenerEnabled(): Boolean {
+        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        return flat != null && flat.contains(packageName)
+    }
+
+    private fun openNotificationListenerSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(this, "Please enable Notification Access for Callback", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Unable to open notification settings", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateNotificationListenerStatus(textView: TextView) {
+        if (isNotificationListenerEnabled()) {
+            textView.text = getString(R.string.notification_listener_active)
+            textView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
+        } else {
+            textView.text = getString(R.string.notification_listener_inactive)
+            textView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
         }
     }
 
@@ -200,6 +264,10 @@ class MainActivity : AppCompatActivity() {
         val tvBatteryStatus = findViewById<TextView>(R.id.tvBatteryStatus)
         if (tvBatteryStatus != null) {
             updateBatteryStatus(tvBatteryStatus)
+        }
+        val tvNotificationStatus = findViewById<TextView>(R.id.tvNotificationStatus)
+        if (tvNotificationStatus != null) {
+            updateNotificationListenerStatus(tvNotificationStatus)
         }
     }
 }
