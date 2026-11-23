@@ -45,26 +45,24 @@ class FloatingButtonService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundService()
-        
-        val intentNumber = intent?.getStringExtra("number")
-        
+
+        val number = intent?.getStringExtra("number")
+        if (number.isNullOrBlank()) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
         handler.postDelayed(
             {
-                val (name, number) = if (!intentNumber.isNullOrEmpty()) {
-                    // Try to find name for this number
-                    Pair(getNameFromNumber(intentNumber), intentNumber)
-                } else {
-                    getLastCallerInfo()
-                }
-                
+                val displayName = getNameFromNumber(number) ?: number
                 lastNumber = number
 
                 if (floatingView == null) {
-                    showFloatingButton(name ?: number ?: "Unknown")
+                    showFloatingButton(displayName)
                 } else {
                     try {
                         val recallButton = floatingView?.findViewById<Button>(R.id.btn_recall)
-                        recallButton?.text = getString(R.string.recall_with_name, name ?: number ?: "Unknown")
+                        recallButton?.text = getString(R.string.recall_with_name, displayName)
                     } catch (e: Exception) { e.printStackTrace() }
                 }
                 
@@ -159,31 +157,6 @@ class FloatingButtonService : Service() {
         } else {
             startForeground(1, notification)
         }
-    }
-
-    private fun getLastCallerInfo(): Pair<String?, String?> {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-            try {
-                val cursor = contentResolver.query(
-                    CallLog.Calls.CONTENT_URI,
-                    arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME),
-                    null,
-                    null,
-                    "${CallLog.Calls.DATE} DESC"
-                )
-
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        val number = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER))
-                        val name = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.CACHED_NAME))
-                        return Pair(name, number)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return Pair(null, null)
     }
 
     private fun showFloatingButton(displayName: String) {
